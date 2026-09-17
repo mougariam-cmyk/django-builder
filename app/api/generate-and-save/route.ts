@@ -3,7 +3,7 @@ import { GoogleGenAI } from '@google/genai';
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' });
 
-// تخزين مؤقت بسيط (ملاحظة: يفضل لاحقاً استخدام قاعدة بيانات، لكن سنبقيها لتعمل فوراً)
+// Temporary memory store (Note: for production scaling, use a database later)
 global.sitesDatabase = global.sitesDatabase || {};
 
 export async function POST(request: Request) {
@@ -15,7 +15,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    const systemInstruction = `You are an expert Web3 landing page developer. Generate a complete, standalone, highly engaging single-page HTML website for a meme coin.
+    const systemInstruction = `You are an expert Web3 landing page developer. Generate a complete, standalone, highly engaging single-page HTML website for a meme coin in English.
 Return ONLY raw valid HTML code without markdown formatting or markdown backticks (\`\`\`html).
 Include modern CSS in a <style> tag.
 Make the layout dark-themed, flashy, crypto-native, and responsive.
@@ -26,8 +26,8 @@ Include:
 - Social buttons for Telegram (${telegram || '#'}) and Twitter (${twitter || '#'}).
 - Disclaimer at footer.`;
 
-  // استخدام النموذج المعتمد والمستقر
-  const response = await ai.models.generateContent({
+    // Using the stable and supported Gemini model
+    const response = await ai.models.generateContent({
       model: 'gemini-1.5-flash',
       contents: prompt,
       config: {
@@ -41,7 +41,7 @@ Include:
     const cleanSubdomain = subdomain.toLowerCase().replace(/[^a-z0-9-]/g, '');
     global.sitesDatabase[cleanSubdomain] = generatedHtml;
 
-    // إرجاع رابط مباشر لصفحة المعاينة الخاصة بالموقع داخل مشروعك
+    // Return direct preview URL pointing to your app
     const hostHeader = request.headers.get('host') || 'localhost:3000';
     const protocol = hostHeader.includes('localhost') ? 'http' : 'https';
     const siteUrl = `${protocol}://${hostHeader}/preview/${cleanSubdomain}`;
