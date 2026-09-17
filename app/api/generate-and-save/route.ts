@@ -1,17 +1,15 @@
 import { NextResponse } from 'next/server';
 import { GoogleGenAI } from '@google/genai';
 
-// Temporary memory store
 global.sitesDatabase = global.sitesDatabase || {};
 
 export async function POST(request: Request) {
   try {
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
-      return NextResponse.json({ error: 'GEMINI_API_KEY is missing in environment variables' }, { status: 500 });
+      return NextResponse.json({ error: 'GEMINI_API_KEY is missing' }, { status: 500 });
     }
 
-    const ai = new GoogleGenAI({ apiKey });
     const body = await request.json();
     const { subdomain, tokenName, ticker, prompt, presaleWallet, telegram, twitter } = body;
 
@@ -19,23 +17,22 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    const systemInstruction = `You are an expert Web3 landing page developer. Generate a complete, standalone, highly engaging single-page HTML website for a meme coin in English.
+    const ai = new GoogleGenAI({ apiKey });
+
+    const fullPrompt = `You are an expert Web3 landing page developer. Generate a complete, standalone, highly engaging single-page HTML website for a meme coin in English.
 Return ONLY raw valid HTML code without markdown formatting or markdown backticks (\`\`\`html).
 Include modern CSS in a <style> tag.
 Make the layout dark-themed, flashy, crypto-native, and responsive.
 Include:
-- Hero header with Token Name (${tokenName}) and Ticker (${ticker})
+- Hero header with Token Name (${tokenName}) and Ticker (${ticker || 'MEME'})
 - Engaging narrative based on the user prompt: "${prompt}"
-- Presale box displaying the deposit wallet: "${presaleWallet}" with a Copy button.
+- Presale box displaying the deposit wallet: "${presaleWallet || '0xYourWalletAddressHere'}" with a Copy button.
 - Social buttons for Telegram (${telegram || '#'}) and Twitter (${twitter || '#'}).
 - Disclaimer at footer.`;
 
     const response = await ai.models.generateContent({
       model: 'gemini-1.5-flash',
-      contents: prompt,
-      config: {
-        systemInstruction,
-      }
+      contents: fullPrompt,
     });
 
     let generatedHtml = response.text || '<h1>Error generating site HTML</h1>';
@@ -56,10 +53,9 @@ Include:
       presaleWallet 
     });
   } catch (error: any) {
-    console.error('Detailed API Error:', error);
+    console.error('API Catch Error:', error);
     return NextResponse.json({ 
-      error: error.message || 'Server error', 
-      details: error.toString() 
+      error: error.message || 'Internal Server Error' 
     }, { status: 500 });
   }
 }
