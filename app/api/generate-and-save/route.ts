@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-import { GoogleGenAI } from '@google/genai';
 
 global.sitesDatabase = global.sitesDatabase || {};
 
@@ -7,7 +6,7 @@ export async function POST(request: Request) {
   try {
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
-      return NextResponse.json({ error: 'GEMINI_API_KEY is missing' }, { status: 500 });
+      return NextResponse.json({ error: 'GEMINI_API_KEY is missing in Vercel environment variables' }, { status: 500 });
     }
 
     const body = await request.json();
@@ -17,25 +16,24 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    const ai = new GoogleGenAI({ apiKey });
+    const systemInstruction = `You are an expert Web3 landing page developer. Generate a complete, standalone, highly engaging single-page HTML website for a meme coin in English. Return ONLY raw valid HTML code without markdown formatting or markdown backticks. Include modern CSS in a <style> tag. Make the layout dark-themed, flashy, crypto-native, and responsive. Include: Hero header with Token Name (${tokenName}) and Ticker (${ticker || 'MEME'}), engaging narrative based on prompt: "${prompt}", presale box with wallet: "${presaleWallet || '0xYourWallet'}", social links, and footer disclaimer.`;
 
-    const fullPrompt = `You are an expert Web3 landing page developer. Generate a complete, standalone, highly engaging single-page HTML website for a meme coin in English.
-Return ONLY raw valid HTML code without markdown formatting or markdown backticks (\`\`\`html).
-Include modern CSS in a <style> tag.
-Make the layout dark-themed, flashy, crypto-native, and responsive.
-Include:
-- Hero header with Token Name (${tokenName}) and Ticker (${ticker || 'MEME'})
-- Engaging narrative based on the user prompt: "${prompt}"
-- Presale box displaying the deposit wallet: "${presaleWallet || '0xYourWalletAddressHere'}" with a Copy button.
-- Social buttons for Telegram (${telegram || '#'}) and Twitter (${twitter || '#'}).
-- Disclaimer at footer.`;
-
-    const response = await ai.models.generateContent({
-      model: 'gemini-1.5-flash',
-      contents: fullPrompt,
+    // الاتصال المباشر بـ Google Gemini API عبر fetch لتجنب أي أخطاء مكتبية
+    const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: `${systemInstruction}\n\nUser Request: ${prompt}` }] }]
+      })
     });
 
-    let generatedHtml = response.text || '<h1>Error generating site HTML</h1>';
+    const geminiData = await geminiRes.json();
+    
+    if (!geminiRes.ok) {
+      return NextResponse.json({ error: geminiData.error?.message || 'Failed to communicate with Gemini API' }, { status: 500 });
+    }
+
+    let generatedHtml = geminiData.candidates?.[0]?.content?.parts?.[0]?.text || '<h1>Error generating site HTML</h1>';
     generatedHtml = generatedHtml.replace(/```html/g, '').replace(/```/g, '').trim();
 
     const cleanSubdomain = subdomain.toLowerCase().replace(/[^a-z0-9-]/g, '');
@@ -53,9 +51,7 @@ Include:
       presaleWallet 
     });
   } catch (error: any) {
-    console.error('API Catch Error:', error);
-    return NextResponse.json({ 
-      error: error.message || 'Internal Server Error' 
-    }, { status: 500 });
+    console.error('API Error:', error);
+    return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 });
   }
 }
