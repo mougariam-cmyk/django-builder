@@ -55,7 +55,7 @@ export default function CreateWebsitePage() {
       <div style={{ maxWidth: '650px', margin: '0 auto', background: '#18181b', padding: '30px', borderRadius: '12px', border: '1px solid #27272a', position: 'relative', zIndex: 1, boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }}>
         
         <div style={{ marginBottom: '25px' }}>
-          <h1 style={{ fontSize: '26px', margin: 0, display: 'flex', alignItems: '10px', gap: '8px' }}>
+          <h1 style={{ fontSize: '26px', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
             <span>🎨</span> Django Web Builder
           </h1>
           <p style={{ color: '#a1a1aa', fontSize: '13px', margin: '5px 0 0 0' }}>Transform your vision into a masterpiece website using AI.</p>
@@ -104,9 +104,30 @@ export default function CreateWebsitePage() {
         </button>
 
         {result && (
-          <div style={{ marginTop: '20px', background: '#27272a', padding: '15px', borderRadius: '6px', border: '1px solid #3f3f46' }}>
-            <h3 style={{ color: '#4ade80', marginBottom: '5px', fontSize: '16px' }}>✨ Website Generated Successfully!</h3>
-            <p style={{ margin: 0, fontSize: '14px', color: '#d4d4d8' }}>{result.message || 'Your website has been successfully built and saved.'}</p>
+          <div style={{ marginTop: '20px', background: '#27272a', padding: '20px', borderRadius: '6px', border: '1px solid #3f3f46', textAlign: 'center' }}>
+            <h3 style={{ color: '#4ade80', marginBottom: '8px', fontSize: '16px' }}>✨ Website Generated Successfully!</h3>
+            <p style={{ margin: '0 0 15px 0', fontSize: '14px', color: '#d4d4d8' }}>Your website has been successfully built and saved.</p>
+            
+            {result.siteUrl && (
+              <a 
+                href={result.siteUrl} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                style={{
+                  display: 'inline-block',
+                  background: '#eab308',
+                  color: '#000',
+                  padding: '12px 24px',
+                  borderRadius: '6px',
+                  fontWeight: 'bold',
+                  textDecoration: 'none',
+                  fontSize: '14px',
+                  boxShadow: '0 4px 12px rgba(234, 179, 8, 0.3)'
+                }}
+              >
+                🌐 Browse Website (Preview)
+              </a>
+            )}
           </div>
         )}
       </div>
