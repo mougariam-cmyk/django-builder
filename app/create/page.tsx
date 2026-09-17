@@ -11,7 +11,7 @@ export default function CreatePage() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
 
-  // عناوين محافظ Bitget الحقيقية الخاصة بك للاستقبال
+  // عناوين محافظ Bitget الخاصة بك للاستقبال
   const EVM_WALLET = "0x69316e83C60270C56A599d67521D4baa99a23bEC"; // Ethereum & BNB
   const SOL_WALLET = "HtdwqqhDeqVKxXZabcoas9mof1DFhPDFPyhyz8SAj84t"; // Solana
   const ARC_USDC_WALLET = "0x69316e83C60270C56A599d67521D4baa99a23bEC"; // ARC Network (USDC)
