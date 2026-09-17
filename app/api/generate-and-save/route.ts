@@ -1,13 +1,17 @@
 import { NextResponse } from 'next/server';
 import { GoogleGenAI } from '@google/genai';
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' });
-
-// Temporary memory store (Note: for production scaling, use a database later)
+// Temporary memory store
 global.sitesDatabase = global.sitesDatabase || {};
 
 export async function POST(request: Request) {
   try {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      return NextResponse.json({ error: 'GEMINI_API_KEY is missing in environment variables' }, { status: 500 });
+    }
+
+    const ai = new GoogleGenAI({ apiKey });
     const body = await request.json();
     const { subdomain, tokenName, ticker, prompt, presaleWallet, telegram, twitter } = body;
 
@@ -26,7 +30,6 @@ Include:
 - Social buttons for Telegram (${telegram || '#'}) and Twitter (${twitter || '#'}).
 - Disclaimer at footer.`;
 
-    // Using the stable and supported Gemini model
     const response = await ai.models.generateContent({
       model: 'gemini-1.5-flash',
       contents: prompt,
@@ -41,7 +44,6 @@ Include:
     const cleanSubdomain = subdomain.toLowerCase().replace(/[^a-z0-9-]/g, '');
     global.sitesDatabase[cleanSubdomain] = generatedHtml;
 
-    // Return direct preview URL pointing to your app
     const hostHeader = request.headers.get('host') || 'localhost:3000';
     const protocol = hostHeader.includes('localhost') ? 'http' : 'https';
     const siteUrl = `${protocol}://${hostHeader}/preview/${cleanSubdomain}`;
@@ -54,7 +56,10 @@ Include:
       presaleWallet 
     });
   } catch (error: any) {
-    console.error(error);
-    return NextResponse.json({ error: error.message || 'Server error' }, { status: 500 });
+    console.error('Detailed API Error:', error);
+    return NextResponse.json({ 
+      error: error.message || 'Server error', 
+      details: error.toString() 
+    }, { status: 500 });
   }
 }
