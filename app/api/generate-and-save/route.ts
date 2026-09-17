@@ -3,6 +3,7 @@ import { GoogleGenAI } from '@google/genai';
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' });
 
+// تخزين مؤقت بسيط (ملاحظة: يفضل لاحقاً استخدام قاعدة بيانات، لكن سنبقيها لتعمل فوراً)
 global.sitesDatabase = global.sitesDatabase || {};
 
 export async function POST(request: Request) {
@@ -25,8 +26,9 @@ Include:
 - Social buttons for Telegram (${telegram || '#'}) and Twitter (${twitter || '#'}).
 - Disclaimer at footer.`;
 
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+  // استخدام النموذج المعتمد والمستقر
+  const response = await ai.models.generateContent({
+      model: 'gemini-1.5-flash',
       contents: prompt,
       config: {
         systemInstruction,
@@ -36,12 +38,21 @@ Include:
     let generatedHtml = response.text || '<h1>Error generating site HTML</h1>';
     generatedHtml = generatedHtml.replace(/```html/g, '').replace(/```/g, '').trim();
 
-    global.sitesDatabase[subdomain.toLowerCase()] = generatedHtml;
+    const cleanSubdomain = subdomain.toLowerCase().replace(/[^a-z0-9-]/g, '');
+    global.sitesDatabase[cleanSubdomain] = generatedHtml;
 
-    const hostHeader = request.headers.get('host') || 'vercel.app';
-    const siteUrl = `https://${subdomain.toLowerCase()}.${hostHeader}`;
+    // إرجاع رابط مباشر لصفحة المعاينة الخاصة بالموقع داخل مشروعك
+    const hostHeader = request.headers.get('host') || 'localhost:3000';
+    const protocol = hostHeader.includes('localhost') ? 'http' : 'https';
+    const siteUrl = `${protocol}://${hostHeader}/preview/${cleanSubdomain}`;
 
-    return NextResponse.json({ success: true, siteUrl });
+    return NextResponse.json({ 
+      success: true, 
+      siteUrl, 
+      tokenName, 
+      ticker, 
+      presaleWallet 
+    });
   } catch (error: any) {
     console.error(error);
     return NextResponse.json({ error: error.message || 'Server error' }, { status: 500 });
