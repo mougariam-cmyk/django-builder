@@ -4,7 +4,7 @@ export async function POST(request: Request) {
   try {
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
-      return NextResponse.json({ error: 'GEMINI_API_KEY is missing in environment variables' }, { status: 500 });
+      return NextResponse.json({ error: 'GEMINI_API_KEY is missing' }, { status: 500 });
     }
 
     const body = await request.json();
@@ -30,10 +30,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: geminiData.error?.message || 'Gemini API Error' }, { status: 500 });
     }
 
-    let generatedHtml = geminiData.candidates?.[0]?.content?.parts?.[0]?.text || '<h1>Error generating site HTML</h1>';
+    let generatedHtml = geminiData.candidates?.[0]?.content?.parts?.[0]?.text;
+    
+    if (!generatedHtml) {
+      generatedHtml = `<!DOCTYPE html><html><head><title>${tokenName}</title><style>body{background:#09090b;color:#fff;font-family:sans-serif;text-align:center;padding:50px;}</style></head><body><h1>${tokenName} (${ticker || 'MEME'})</h1><p>${prompt}</p></body></html>`;
+    }
+
     generatedHtml = generatedHtml.replace(/```html/g, '').replace(/```/g, '').trim();
 
-    // إرجاع كود الـ HTML الحقيقي مباشرة مع تفاصيل الموقع ليعرضه المتصفح فوراً دون مشاكل الـ Serverless
     return NextResponse.json({ 
       success: true, 
       htmlCode: generatedHtml,
@@ -42,6 +46,7 @@ export async function POST(request: Request) {
       subdomain 
     });
   } catch (error: any) {
-    return NextResponse.json({ error: error.message || 'Server error' }, { status: 500 });
+    console.error('Server Error:', error);
+    return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 });
   }
 }
